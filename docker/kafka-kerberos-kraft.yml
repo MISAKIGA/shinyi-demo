@@ -1,19 +1,13 @@
-# Kafka with Kerberos Authentication (Zookeeper mode)
-# Usage: docker-compose -f docker/kafka-kerberos.yml up -d
+# Kafka with Kerberos Authentication (KRaft mode - no Zookeeper)
+# Usage: docker-compose -f docker/kafka-kerberos-kraft.yml up -d
 #
-# This configuration provides:
-# - Kafka broker with Kerberos authentication
-# - Zookeeper
-# - KDC from published image: docker.io/msga/kafka-kdc-krb:latest
-# - External access via 10.10.10.30:9092
-#
-# Prerequisites:
-# - Pull KDC image: docker pull docker.io/msga/kafka-kdc-krb:latest
+# KRaft mode uses Kafka's built-in consensus instead of Zookeeper.
+# Uses published KDC image: docker.io/msga/kafka-kdc-krb:latest
 
 version: '3.8'
 
 services:
-  # Kerberos KDC - must start first
+  # Kerberos KDC
   kdc:
     image: docker.io/msga/kafka-kdc-krb:latest
     hostname: kdc
@@ -30,46 +24,11 @@ services:
       - kdc-data:/var/lib/kafka
       - kdc-keytab:/etc/kafka
 
-  zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    hostname: zookeeper
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_CLIENT_PORT_NUMBER: 2181
-      ZOOKEEPER_TICK_TIME: 2000
-      # Enable SASL for Zookeeper
-      KAFKA_SASL_ENABLED_MECHANISMS: GSSAPI
-      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: GSSAPI
-      ZOOKEEPER_AUTH_PROVIDER_SASL: org.apache.zookeeper.server.auth.KERBEROS_AUTHENTICATION
-      ZOOKEEPER_REQUIRE_CLIENT_AUTHENTICATION: SASL
-      ZOOKEEPER_CLIENT_AUTHENTICATION: SASL
-      ZOOKEEPER_AUTHPROVIDER_SCHEMES: kerberos
-      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/zookeeper-jaas.conf -Djava.security.krb5.conf=/etc/kafka/krb5.conf -Dsun.security.krb5.debug=false"
-    ports:
-      - "2181:2181"
-    networks:
-      - kafka-network
-    volumes:
-      - zookeeper-data:/var/lib/zookeeper/data
-      - ./kafka-kerberos-jaas.conf:/etc/kafka/zookeeper-jaas.conf:ro
-      - ./kdc/krb5.conf:/etc/kafka/krb5.conf:ro
-      - ./kafka.keytab:/etc/kafka/kafka.keytab:ro
-    healthcheck:
-      test: ["CMD", "nc", "-z", "localhost", "2181"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    depends_on:
-      - kdc
-
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     hostname: kafka
     container_name: kafka
     depends_on:
-      zookeeper:
-        condition: service_healthy
       kdc:
         condition: service_started
     ports:
@@ -78,18 +37,31 @@ services:
     environment:
       # Broker settings
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: EXTERNAL:SASL_PLAINTEXT,INTERNAL:PLAINTEXT
+
+      # KRaft mode (no Zookeeper)
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENERS: EXTERNAL://0.0.0.0:9092,INTERNAL://0.0.0.0:9093,CONTROLLER://0.0.0.0:9094
       KAFKA_ADVERTISED_LISTENERS: EXTERNAL://10.10.10.30:9092,INTERNAL://kafka:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: EXTERNAL:SASL_PLAINTEXT,INTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9094
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_LOG_RETENTION_HOURS: 168
       KAFKA_LOG_SEGMENT_BYTES: 1073741824
 
+      # KRaft cluster ID (22-char base64 encoded)
+      CLUSTER_ID: "OTg1N2MzNzc0ZjA3NGQyNT"
+      KAFKA_CLUSTER_ID: "OTg1N2MzNzc0ZjA3NGQyNT"
+
       # Kerberos/SASL Authentication
       KAFKA_SASL_ENABLED_MECHANISMS: GSSAPI
-      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: GSSAPI
+      # Use PLAINTEXT for inter-broker, SASL for external clients
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: PLAINTEXT
       KAFKA_SASL_KERBEROS_SERVICE_NAME: kafka
       KAFKA_SASL_KERBEROS_PRINCIPAL: kafka/kafka.example.com@EXAMPLE.COM
       KAFKA_SASL_KERBEROS_KEYTAB: /etc/kafka/kafka.keytab
@@ -124,7 +96,6 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     networks:
       - kafka-network
 
@@ -132,7 +103,6 @@ volumes:
   kdc-data:
   kdc-keytab:
   kafka-data:
-  zookeeper-data:
 
 networks:
   kafka-network:
