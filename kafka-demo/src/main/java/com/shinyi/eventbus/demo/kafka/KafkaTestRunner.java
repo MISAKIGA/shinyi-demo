@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
  *   java -jar kafka-demo.jar --kafka.test.mode=producer
  *   java -jar kafka-demo.jar --kafka.test.mode=consumer
  *   java -jar kafka-demo.jar --kafka.test.mode=both
+ *   java -jar kafka-demo.jar --kafka.test.mode=kerberos-test
  */
 @Slf4j
 @Component
@@ -54,8 +55,11 @@ public class KafkaTestRunner implements CommandLineRunner {
                 Thread.sleep(2000);
                 runConsumerTest();
                 break;
+            case "kerberos-test":
+                runKerberosTest();
+                break;
             default:
-                log.warn("Unknown test mode: {}. Run with --kafka.test.mode=[producer|consumer|both]", testMode);
+                log.warn("Unknown test mode: {}. Run with --kafka.test.mode=[producer|consumer|both|kerberos-test]", testMode);
         }
 
         log.info("==============================================");
@@ -147,5 +151,11 @@ public class KafkaTestRunner implements CommandLineRunner {
 
         log.info("Consumer test completed: {} msgs consumed, {} failed",
                 result.getSuccessCount(), result.getFailureCount());
+    }
+
+    private void runKerberosTest() throws Exception {
+        log.info("\n>>> Running Kerberos Authentication Test...");
+        KafkaKerberosTest kerberosTest = new KafkaKerberosTest(config);
+        kerberosTest.runTest();
     }
 }

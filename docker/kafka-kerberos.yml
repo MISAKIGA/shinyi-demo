@@ -3,20 +3,22 @@
 #
 # This configuration provides:
 # - Kafka broker with Kerberos authentication
-# - Zookeeper with Kerberos
-# - KDC (Kerberos Distribution Center)
+# - Zookeeper
+# - Custom KDC (Kerberos Distribution Center)
 # - External access via 10.10.10.30:9092
 #
 # Prerequisites:
-# - Kerberos principal and keytab must be configured
-# - krb5.conf must be available
+# - Build KDC image locally
+# - Keytab is generated during KDC container startup
 
 version: '3.8'
 
 services:
-  # Kerberos KDC
+  # Kerberos KDC - must start first
   kdc:
-    image: sborde/manydocker-kdc:latest
+    build:
+      context: ./kdc
+      dockerfile: Dockerfile
     hostname: kdc
     container_name: kdc
     environment:
@@ -27,6 +29,9 @@ services:
       - "749:749"
     networks:
       - kafka-network
+    volumes:
+      - kdc-data:/var/lib/kafka
+      - kdc-keytab:/etc/kafka
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -35,7 +40,6 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-      # Zookeeper Kerberos settings would go here if needed
     ports:
       - "2181:2181"
     networks:
@@ -45,14 +49,18 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    depends_on:
+      - kdc
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     hostname: kafka
     container_name: kafka
     depends_on:
-      - zookeeper
-      - kdc
+      zookeeper:
+        condition: service_healthy
+      kdc:
+        condition: service_started
     ports:
       - "9092:9092"
       - "9093:9093"
@@ -76,16 +84,14 @@ services:
       KAFKA_SASL_KERBEROS_KEYTAB: /etc/kafka/kafka.keytab
 
       # JAAS Configuration for Kerberos
-      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/jaas.conf -Djava.security.krb5.conf=/etc/kafka/krb5.conf"
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/jaas.conf -Djava.security.krb5.conf=/etc/kafka/krb5.conf -Dsun.security.krb5.debug=true"
 
       # JVM settings
       KAFKA_HEAP_OPTS: "-Xmx2G -Xms2G"
       KAFKA_JVM_PERFORMANCE_OPTS: "-XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35"
     volumes:
       - kafka-data:/var/lib/kafka/data
-      - ./kafka-kerberos-jaas.conf:/etc/kafka/jaas.conf:ro
-      - ./krb5.conf:/etc/kafka/krb5.conf:ro
-      - ./kafka.keytab:/etc/kafka/kafka.keytab:ro
+      - kdc-keytab:/etc/kafka:ro
     networks:
       - kafka-network
     healthcheck:
@@ -94,7 +100,7 @@ services:
       timeout: 10s
       retries: 5
 
-  # Kafka UI for debugging (without Kerberos for simplicity)
+  # Kafka UI for debugging (uses PLAINTEXT internally)
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: kafka-ui
@@ -110,6 +116,8 @@ services:
       - kafka-network
 
 volumes:
+  kdc-data:
+  kdc-keytab:
   kafka-data:
 
 networks:

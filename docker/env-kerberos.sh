@@ -10,8 +10,8 @@ export KAFKA_SECURITY_PROTOCOL=SASL_PLAINTEXT
 export KAFKA_SASL_MECHANISM=GSSAPI
 export KAFKA_KERBEROS_SERVICE_NAME=kafka
 export KAFKA_KERBEROS_PRINCIPAL=kafka/kafka.example.com@EXAMPLE.COM
-export KAFKA_KERBEROS_KEYTAB=/path/to/kafka.keytab
-export KAFKA_KERBEROS_KRB5_LOCATION=/path/to/krb5.conf
+export KAFKA_KERBEROS_KEYTAB=/etc/kafka/kafka.keytab
+export KAFKA_KERBEROS_KRB5_LOCATION=/etc/kafka/krb5.conf
 
 # Producer settings
 export KAFKA_PRODUCER_MESSAGE_COUNT=10000
