@@ -1,0 +1,67 @@
+# Kafka Demo Application Configuration
+# This configuration supports PLAINTEXT, SASL_PLAINTEXT, SASL_SSL, and Kerberos authentication
+
+spring:
+  application:
+    name: kafka-demo
+
+server:
+  port: 8080
+
+# Kafka Demo Configuration
+kafka:
+  demo:
+    # Connection settings - change to your Kafka broker address
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:10.10.10.30:9092}
+    topic: ${KAFKA_TOPIC:test-topic}
+    group-id: ${KAFKA_GROUP_ID:test-group}
+
+    # Producer settings
+    producer-message-count: ${KAFKA_PRODUCER_MESSAGE_COUNT:10000}
+    producer-message-size: ${KAFKA_PRODUCER_MESSAGE_SIZE:1024}
+    producer-acks: ${KAFKA_PRODUCER_ACKS:1}
+    producer-retries: ${KAFKA_PRODUCER_RETRIES:3}
+    producer-batch-size: ${KAFKA_PRODUCER_BATCH_SIZE:16384}
+    producer-linger-ms: ${KAFKA_PRODUCER_LINGER_MS:1}
+    producer-buffer-memory: ${KAFKA_PRODUCER_BUFFER_MEMORY:33554432}
+
+    # Consumer settings
+    consumer-max-poll-records: ${KAFKA_CONSUMER_MAX_POLL_RECORDS:500}
+    consumer-auto-offset-reset: ${KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
+    consumer-enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:true}
+
+    # Security settings
+    # Supported protocols: PLAINTEXT, SASL_PLAINTEXT, SASL_SSL
+    # Supported SASL mechanisms: PLAIN, SCRAM-SHA-256, SCRAM-SHA-512, GSSAPI (Kerberos)
+    security-protocol: ${KAFKA_SECURITY_PROTOCOL:PLAINTEXT}
+    sasl-mechanism: ${KAFKA_SASL_MECHANISM:PLAIN}
+    username: ${KAFKA_SASL_USERNAME:}
+    password: ${KAFKA_SASL_PASSWORD:}
+
+    # Kerberos settings (used when sasl-mechanism is GSSAPI)
+    kerberos-service-name: ${KAFKA_KERBEROS_SERVICE_NAME:kafka}
+    kerberos-principal: ${KAFKA_KERBEROS_PRINCIPAL:}
+    kerberos-keytab: ${KAFKA_KERBEROS_KEYTAB:}
+    kerberos-krb5-location: ${KAFKA_KERBEROS_KRB5_LOCATION:}
+
+# Shinyi EventBus Kafka Configuration
+shinyi:
+  eventbus:
+    kafka:
+      default:
+        is-default: true
+        bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:10.10.10.30:9092}
+        topic: ${KAFKA_TOPIC:test-topic}
+        group-id: ${KAFKA_GROUP_ID:test-group}
+        acks: ${KAFKA_PRODUCER_ACKS:1}
+        retries: 3
+        batch-size: 16384
+        linger-ms: 1
+        buffer-memory: 33554432
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.shinyi.eventbus: DEBUG
+    org.apache.kafka: WARN

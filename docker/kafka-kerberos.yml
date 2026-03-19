@@ -1,0 +1,117 @@
+# Kafka with Kerberos Authentication
+# Usage: docker-compose -f docker/kafka-kerberos.yml up -d
+#
+# This configuration provides:
+# - Kafka broker with Kerberos authentication
+# - Zookeeper with Kerberos
+# - KDC (Kerberos Distribution Center)
+# - External access via 10.10.10.30:9092
+#
+# Prerequisites:
+# - Kerberos principal and keytab must be configured
+# - krb5.conf must be available
+
+version: '3.8'
+
+services:
+  # Kerberos KDC
+  kdc:
+    image: sborde/manydocker-kdc:latest
+    hostname: kdc
+    container_name: kdc
+    environment:
+      KRB5_REALM: EXAMPLE.COM
+      KRB5_PRINCIPAL: kafka/kafka.example.com@EXAMPLE.COM
+      KRB5_PASSWORD: kafka-secret
+    ports:
+      - "749:749"
+    networks:
+      - kafka-network
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      # Zookeeper Kerberos settings would go here if needed
+    ports:
+      - "2181:2181"
+    networks:
+      - kafka-network
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+      - kdc
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    environment:
+      # Broker settings
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: EXTERNAL:SASL_PLAINTEXT,INTERNAL:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: EXTERNAL://10.10.10.30:9092,INTERNAL://kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+
+      # Kerberos/SASL Authentication
+      KAFKA_SASL_ENABLED_MECHANISMS: GSSAPI
+      KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL: GSSAPI
+      KAFKA_SASL_KERBEROS_SERVICE_NAME: kafka
+      KAFKA_SASL_KERBEROS_PRINCIPAL: kafka/kafka.example.com@EXAMPLE.COM
+      KAFKA_SASL_KERBEROS_KEYTAB: /etc/kafka/kafka.keytab
+
+      # JAAS Configuration for Kerberos
+      KAFKA_OPTS: "-Djava.security.auth.login.config=/etc/kafka/jaas.conf -Djava.security.krb5.conf=/etc/kafka/krb5.conf"
+
+      # JVM settings
+      KAFKA_HEAP_OPTS: "-Xmx2G -Xms2G"
+      KAFKA_JVM_PERFORMANCE_OPTS: "-XX:+UseG1GC -XX:MaxGCPauseMillis=20 -XX:InitiatingHeapOccupancyPercent=35"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+      - ./kafka-kerberos-jaas.conf:/etc/kafka/jaas.conf:ro
+      - ./krb5.conf:/etc/kafka/krb5.conf:ro
+      - ./kafka.keytab:/etc/kafka/kafka.keytab:ro
+    networks:
+      - kafka-network
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9093"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Kafka UI for debugging (without Kerberos for simplicity)
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - kafka-network
+
+volumes:
+  kafka-data:
+
+networks:
+  kafka-network:
+    driver: bridge
