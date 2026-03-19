@@ -13,7 +13,6 @@
     <description>Multi-module demo project for Shinyi EventBus framework</description>
 
     <modules>
-        <module>shinyi-eventbus</module>
         <module>kafka-demo</module>
     </modules>
 
