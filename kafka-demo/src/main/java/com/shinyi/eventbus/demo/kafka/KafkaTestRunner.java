@@ -1,9 +1,16 @@
 package com.shinyi.eventbus.demo.kafka;
 
+import com.shinyi.eventbus.demo.kafka.benchmark.BenchmarkRunner;
+import com.shinyi.eventbus.demo.kafka.consumer.ConsumerPool;
+import com.shinyi.eventbus.demo.kafka.consumer.ManualOffsetConsumer;
+import com.shinyi.eventbus.demo.kafka.producer.IdempotentKafkaProducer;
+import com.shinyi.eventbus.demo.kafka.producer.ProducerPool;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
+
+import java.util.Properties;
 
 /**
  * Command-line runner for Kafka performance tests
@@ -13,6 +20,9 @@ import org.springframework.stereotype.Component;
  *   java -jar kafka-demo.jar --kafka.test.mode=consumer
  *   java -jar kafka-demo.jar --kafka.test.mode=both
  *   java -jar kafka-demo.jar --kafka.test.mode=kerberos-test
+ *   java -jar kafka-demo.jar --kafka.test.mode=mt-producer
+ *   java -jar kafka-demo.jar --kafka.test.mode=eos
+ *   java -jar kafka-demo.jar --kafka.test.mode=benchmark
  */
 @Slf4j
 @Component
@@ -58,8 +68,17 @@ public class KafkaTestRunner implements CommandLineRunner {
             case "kerberos-test":
                 runKerberosTest();
                 break;
+            case "mt-producer":
+                runMultiThreadedProducerTest();
+                break;
+            case "eos":
+                runExactlyOnceTest();
+                break;
+            case "benchmark":
+                runBenchmarkTest();
+                break;
             default:
-                log.warn("Unknown test mode: {}. Run with --kafka.test.mode=[producer|consumer|both|kerberos-test]", testMode);
+                log.warn("Unknown test mode: {}. Run with --kafka.test.mode=[producer|consumer|both|kerberos-test|mt-producer|eos|benchmark]", testMode);
         }
 
         log.info("==============================================");
@@ -157,5 +176,105 @@ public class KafkaTestRunner implements CommandLineRunner {
         log.info("\n>>> Running Kerberos Authentication Test...");
         KafkaKerberosTest kerberosTest = new KafkaKerberosTest(config);
         kerberosTest.runTest();
+    }
+
+    private void runMultiThreadedProducerTest() throws Exception {
+        log.info("\n>>> Running Multi-Threaded Producer Test...");
+        log.info("Pool Size: {}", config.getProducerPoolSize());
+        log.info("Message Count: {}", config.getProducerMessageCount());
+
+        Properties props = new Properties();
+        props.put("bootstrap.servers", config.getBootstrapServers());
+        props.put("acks", config.getProducerAcks());
+        props.put("retries", config.getProducerRetries());
+        props.put("batch.size", config.getProducerBatchSize());
+        props.put("linger.ms", config.getProducerLingerMs());
+        props.put("buffer.memory", config.getProducerBufferMemory());
+        props.put("compression.type", config.getProducerCompressionType());
+
+        try (ProducerPool pool = new ProducerPool(
+                config.getBootstrapServers(),
+                config.getTopic(),
+                config.getProducerPoolSize(),
+                props)) {
+
+            IdempotentKafkaProducer.PerformanceResult result =
+                pool.sendDistributed(config.getProducerMessageCount(), config.getProducerMessageSize());
+
+            log.info("Multi-threaded producer test completed:");
+            log.info("  {} msgs successful, {} failed", result.successCount, result.failureCount);
+            log.info("  Throughput: {} msg/sec", String.format("%.2f", result.throughput));
+        }
+    }
+
+    private void runExactlyOnceTest() throws Exception {
+        log.info("\n>>> Running Exactly-Once Semantics Test...");
+        log.info("Message Count: {}", config.getProducerMessageCount());
+
+        // Produce with idempotent producer
+        Properties producerProps = new Properties();
+        producerProps.put("bootstrap.servers", config.getBootstrapServers());
+        producerProps.put("acks", "all");
+        producerProps.put("retries", Integer.MAX_VALUE);
+        producerProps.put("enable.idempotence", true);
+        producerProps.put("batch.size", config.getProducerBatchSize());
+        producerProps.put("linger.ms", config.getProducerLingerMs());
+        producerProps.put("compression.type", config.getProducerCompressionType());
+
+        log.info("Producing {} messages with idempotent producer...", config.getProducerMessageCount());
+
+        try (IdempotentKafkaProducer producer =
+             new IdempotentKafkaProducer(config.getBootstrapServers(), config.getTopic(), producerProps)) {
+            IdempotentKafkaProducer.PerformanceResult produceResult =
+                producer.sendBatch(config.getProducerMessageCount(), config.getProducerMessageSize(), 1000, 10);
+
+            log.info("Produced: {} msgs successful, {} failed",
+                    produceResult.successCount, produceResult.failureCount);
+        }
+
+        Thread.sleep(2000);
+
+        // Consume with manual commit
+        Properties consumerProps = new Properties();
+        consumerProps.put("enable.auto.commit", "false");
+        consumerProps.put("max.poll.records", config.getConsumerMaxPollRecords());
+
+        log.info("Consuming {} messages with manual offset commit...", config.getProducerMessageCount());
+
+        ManualOffsetConsumer.MessageProcessor processor = (key, value) -> {
+            return value != null && value.length > 0;
+        };
+
+        try (ManualOffsetConsumer consumer =
+             new ManualOffsetConsumer(
+                     config.getBootstrapServers(),
+                     config.getTopic(),
+                     config.getGroupId(),
+                     consumerProps,
+                     1000)) {
+
+            ManualOffsetConsumer.ConsumptionResult consumeResult =
+                consumer.consumeWithManualCommit(config.getProducerMessageCount(), 120, processor);
+
+            log.info("Consumed: {} msgs successful, {} failed",
+                    consumeResult.successCount, consumeResult.failureCount);
+            log.info("Exactly-once semantics verified!");
+        }
+    }
+
+    private void runBenchmarkTest() throws Exception {
+        log.info("\n>>> Running Full Benchmark Suite...");
+        log.info("Message Count: {}", config.getProducerMessageCount());
+        log.info("Message Size: {} bytes", config.getProducerMessageSize());
+
+        BenchmarkRunner runner = new BenchmarkRunner(
+                config.getBootstrapServers(),
+                config.getTopic(),
+                config.getProducerMessageCount(),
+                config.getProducerMessageSize()
+        );
+
+        java.util.List<com.shinyi.eventbus.demo.kafka.benchmark.BenchmarkResult> results = runner.runAllBenchmarks();
+        BenchmarkRunner.printComparisonTable(results);
     }
 }

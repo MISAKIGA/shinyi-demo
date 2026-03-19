@@ -34,6 +34,14 @@ kafka:
     consumer-fetch-max-wait-ms: ${KAFKA_CONSUMER_FETCH_MAX_WAIT_MS:1000}      # Optimized: 1s
     consumer-max-partition-fetch-bytes: ${KAFKA_CONSUMER_MAX_PARTITION_FETCH_BYTES:10485760}  # Optimized: 10MB
 
+    # Pool settings (for multi-threaded production/consumption)
+    producer-pool-size: ${KAFKA_PRODUCER_POOL_SIZE:4}      # Multi-threaded producer pool size
+    consumer-pool-size: ${KAFKA_CONSUMER_POOL_SIZE:2}      # Multi-threaded consumer pool size
+
+    # Idempotence settings (for exactly-once semantics)
+    enable-idempotence: ${KAFKA_ENABLE_IDEMPOTENCE:false}  # Enable exactly-once producer
+    max-in-flight-requests-per-connection: ${KAFKA_MAX_IN_FLIGHT_REQUESTS:5}
+
     # Security settings
     # Supported protocols: PLAINTEXT, SASL_PLAINTEXT, SASL_SSL
     # Supported SASL mechanisms: PLAIN, SCRAM-SHA-256, SCRAM-SHA-512, GSSAPI (Kerberos)

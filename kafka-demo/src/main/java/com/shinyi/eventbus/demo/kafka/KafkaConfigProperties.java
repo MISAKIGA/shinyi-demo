@@ -34,6 +34,14 @@ public class KafkaConfigProperties {
     private int consumerFetchMaxWaitMs = 1000;  // New: 1000ms
     private int consumerMaxPartitionFetchBytes = 10485760;  // New: 10MB
 
+    // Pool settings
+    private int producerPoolSize = 4;  // Multi-threaded producer pool size
+    private int consumerPoolSize = 2;  // Multi-threaded consumer pool size
+
+    // Idempotence settings (for exactly-once semantics)
+    private boolean enableIdempotence = false;  // Enable exactly-once producer
+    private int maxInFlightRequestsPerConnection = 5;  // Required for idempotence
+
     // Security settings
     private String securityProtocol = "PLAINTEXT";
     private String saslMechanism = "PLAIN";
