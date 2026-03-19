@@ -52,6 +52,7 @@ public class KafkaProducerPerformanceTest {
         private String kerberosPrincipal = null;
         private String kerberosKeytab = null;
         private String kerberosKrb5Location = null;
+        private String compressionType = "snappy";  // Optimized: snappy compression
 
         public Builder bootstrapServers(String bootstrapServers) {
             this.bootstrapServers = bootstrapServers;
@@ -138,6 +139,11 @@ public class KafkaProducerPerformanceTest {
             return this;
         }
 
+        public Builder compressionType(String compressionType) {
+            this.compressionType = compressionType;
+            return this;
+        }
+
         public KafkaProducerPerformanceTest build() {
             KafkaConnectConfig config = new KafkaConnectConfig();
             config.setTopic(topic);
@@ -160,6 +166,7 @@ public class KafkaProducerPerformanceTest {
         props.put(ProducerConfig.BATCH_SIZE_CONFIG, config.getBatchSize());
         props.put(ProducerConfig.LINGER_MS_CONFIG, config.getLingerMs());
         props.put(ProducerConfig.BUFFER_MEMORY_CONFIG, config.getBufferMemory());
+        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
         props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
 
         // Security settings

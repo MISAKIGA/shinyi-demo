@@ -21,14 +21,18 @@ public class KafkaConfigProperties {
     private int producerMessageSize = 1024;
     private String producerAcks = "1";
     private int producerRetries = 3;
-    private int producerBatchSize = 16384;
-    private int producerLingerMs = 1;
-    private int producerBufferMemory = 33554432;
+    private int producerBatchSize = 65536;  // Optimized: 64KB
+    private int producerLingerMs = 10;     // Optimized: 10ms
+    private int producerBufferMemory = 67108864;  // Optimized: 64MB
+    private String producerCompressionType = "snappy";  // New: compression
 
     // Consumer settings
-    private int consumerMaxPollRecords = 500;
+    private int consumerMaxPollRecords = 5000;  // Optimized: 5000
     private String consumerAutoOffsetReset = "earliest";
     private boolean consumerEnableAutoCommit = true;
+    private int consumerFetchMinBytes = 1024;    // New: 1KB
+    private int consumerFetchMaxWaitMs = 1000;  // New: 1000ms
+    private int consumerMaxPartitionFetchBytes = 10485760;  // New: 10MB
 
     // Security settings
     private String securityProtocol = "PLAINTEXT";

@@ -124,8 +124,11 @@ public class KafkaConsumerPerformanceTest {
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true);
         props.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, 45000);
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 500);
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 5000);  // Optimized
         props.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, 300000);
+        props.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, 1024);  // Optimized: 1KB
+        props.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, 1000);  // Optimized: 1s
+        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 10485760);  // Optimized: 10MB
 
         // Security settings
         String securityProtocol = System.getProperty("kafka.security.protocol", "PLAINTEXT");
