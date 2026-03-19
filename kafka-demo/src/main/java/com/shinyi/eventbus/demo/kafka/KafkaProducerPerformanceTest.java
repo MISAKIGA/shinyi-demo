@@ -35,7 +35,7 @@ public class KafkaProducerPerformanceTest {
     }
 
     public static class Builder {
-        private String bootstrapServers = "localhost:9092";
+        private String bootstrapServers = "10.10.10.30:9092";
         private String topic = "test-topic";
         private String acks = "1";
         private int retries = 3;

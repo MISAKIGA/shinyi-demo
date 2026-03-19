@@ -37,7 +37,7 @@ public class KafkaConsumerPerformanceTest {
     }
 
     public static class Builder {
-        private String bootstrapServers = "localhost:9092";
+        private String bootstrapServers = "10.10.10.30:9092";
         private String topic = "test-topic";
         private String groupId = "test-group";
         private String autoOffsetReset = "earliest";

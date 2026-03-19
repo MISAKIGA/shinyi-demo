@@ -19,7 +19,7 @@ public class KafkaProducerPerformanceTestTest {
     @Test
     public void testBuilderDefaultValues() {
         KafkaProducerPerformanceTest test = KafkaProducerPerformanceTest.builder()
-                .bootstrapServers("localhost:9092")
+                .bootstrapServers("10.10.10.30:9092")
                 .topic("test-topic")
                 .build();
 
