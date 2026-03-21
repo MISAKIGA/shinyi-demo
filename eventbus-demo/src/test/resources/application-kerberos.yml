@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: eventbus-demo-kerberos
+
+# Kerberos/Kafka configuration for SASL/GSSAPI authentication
+eventbus:
+  kafka:
+    kerberos:
+      bootstrap-servers: localhost:9093
+      topic: demo-kerberos-topic
+      group-id: demo-kerberos-group
+      # Kerberos authentication settings
+      security-protocol: SASL_PLAINTEXT
+      sasl-mechanism: GSSAPI
+      kerberos-service-name: kafka
+      kerberos-principal: kafka/kafka.example.com@EXAMPLE.COM
+      # Path to keytab file (should be mounted from host or volume)
+      kerberos-keytab: /root/.openclaw/workspace-ceo/shinyi-demo/kafka-kerberos-dev/kafka.keytab
+      # Path to krb5.conf
+      kerberos-krb5-location: /root/.openclaw/workspace-ceo/shinyi-demo/kafka-kerberos-dev/krb5.conf
+      # Producer settings
+      batch-size: 16384
+      linger-ms: 1
+      buffer-memory: 33554432
+      compression-type: snappy
+      # Consumer settings
+      max-poll-records: 500
+
+logging:
+  level:
+    com.shinyi.eventbus: DEBUG
+    root: INFO

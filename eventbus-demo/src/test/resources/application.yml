@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: eventbus-demo-test
+
+eventbus:
+  kafka:
+    bootstrap-servers: ${kafka.bootstrap-servers:localhost:9092}
+    topic: demo-test-topic
+    group-id: test-group
+    batch-size: 16384
+    linger-ms: 1
+    buffer-memory: 33554432
+    compression-type: snappy
+    max-poll-records: 500
+    enable-idempotence: false
+    enable-manual-commit: false
+    commit-batch-size: 100
+
+logging:
+  level:
+    com.shinyi.eventbus: DEBUG
+    root: INFO
