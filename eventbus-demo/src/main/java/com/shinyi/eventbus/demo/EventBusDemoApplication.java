@@ -3,7 +3,7 @@ package com.shinyi.eventbus.demo;
 import cn.hutool.extra.spring.SpringUtil;
 import com.shinyi.eventbus.anno.EnableEventBus;
 import com.shinyi.eventbus.config.kafka.KafkaAutoConfiguration;
-import com.shinyi.eventbus.demo.config.KafkaConfig;
+import com.shinyi.eventbus.config.kafka.KafkaConfig;
 import com.shinyi.eventbus.demo.model.DemoEvent;
 import com.shinyi.eventbus.demo.producer.SimpleEventProducer;
 import com.shinyi.eventbus.exception.EventBusException;
@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Import;
 @EnableEventBus
 @SpringBootApplication
 @EnableConfigurationProperties
-@Import({SpringUtil.class})
+@Import({SpringUtil.class, KafkaConfig.class, KafkaAutoConfiguration.class})
 public class EventBusDemoApplication {
 
     public static void main(String[] args) {

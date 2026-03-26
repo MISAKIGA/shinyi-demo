@@ -38,7 +38,7 @@ shinyi:
   eventbus:
     kafka:
       connect-configs:
-        kafka:
+        myKafka:
           is-default: true
           bootstrap-servers: 10.10.10.30:9092
           topic: demo-topic
