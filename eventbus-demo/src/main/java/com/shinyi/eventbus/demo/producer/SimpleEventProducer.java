@@ -2,6 +2,7 @@ package com.shinyi.eventbus.demo.producer;
 
 import com.shinyi.eventbus.EventBusType;
 import com.shinyi.eventbus.EventModel;
+import com.shinyi.eventbus.SerializeType;
 import com.shinyi.eventbus.demo.model.DemoEvent;
 import com.shinyi.eventbus.registry.KafkaMqEventListenerRegistry;
 import com.shinyi.eventbus.support.EventListenerRegistryManager;
@@ -36,7 +37,7 @@ public class SimpleEventProducer {
                 event,
                 String.valueOf(event.getSequence()),
                 false,  // sync mode
-                "JSON",
+                SerializeType.EVENT.getType(),
                 null
         );
         registryManager.publish(EventBusType.KAFKA, eventModel);
@@ -53,7 +54,7 @@ public class SimpleEventProducer {
                     event,
                     String.valueOf(event.getSequence()),
                     true,   // async mode
-                    "JSON",
+                    SerializeType.EVENT.getType(),
                     null
             );
             registryManager.publish(EventBusType.KAFKA, eventModel);
@@ -70,7 +71,7 @@ public class SimpleEventProducer {
                 event,
                 String.valueOf(event.getSequence()),
                 false,
-                "JSON",
+                SerializeType.EVENT.getType(),
                 null
         );
         registryManager.publish(EventBusType.KAFKA, eventModel);
