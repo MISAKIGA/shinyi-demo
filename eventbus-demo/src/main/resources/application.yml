@@ -1,7 +1,24 @@
 spring:
   application:
     name: eventbus-demo
+  jmx:
+    enabled: true
 
+management:
+  endpoints:
+    jmx:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.shinyi.eventbus: DEBUG
+    root: INFO
+
+# Custom Kafka config (read by KafkaConfig.java)
 eventbus:
   kafka:
     bootstrap-servers: localhost:9092
@@ -16,7 +33,23 @@ eventbus:
     enable-manual-commit: false
     commit-batch-size: 100
 
-logging:
-  level:
-    com.shinyi.eventbus: INFO
-    root: INFO
+# Shinyi EventBus framework config (read by shinyi-eventbus framework)
+shinyi:
+  eventbus:
+    kafka:
+      connect-configs:
+        kafka:
+          is-default: true
+          bootstrap-servers: 10.10.10.30:9092
+          topic: demo-topic
+          group-id: demo-group
+          batch-size: 16384
+          linger-ms: 1
+          buffer-memory: 33554432
+          compression-type: snappy
+          max-poll-records: 500
+          enable-idempotence: false
+          enable-manual-commit: false
+          commit-batch-size: 100
+server:
+  port: 18081
