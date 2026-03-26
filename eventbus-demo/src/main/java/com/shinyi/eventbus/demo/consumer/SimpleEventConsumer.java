@@ -22,9 +22,11 @@ public class SimpleEventConsumer {
     }
 
     @EventBusListener(topic = "${eventbus.kafka.topic}", deserializeType = com.shinyi.eventbus.SerializeType.EVENT)
-    public void onDemoEvent(DemoEvent event) {
-        log.info("[CONSUMER] Received event #{}: {}", event.getSequence(), event.getMessage());
-        receivedEvents.offer(event);
+    public void onDemoEvent(List<DemoEvent> events) {
+        for (DemoEvent event : events) {
+            log.info("[CONSUMER] Received event #{}: {}", event.getSequence(), event.getMessage());
+            receivedEvents.offer(event);
+        }
     }
 
     public List<DemoEvent> getReceivedEvents() {
