@@ -28,6 +28,9 @@ public abstract class BaseIntegrationTest {
     protected static final String TOPIC = "demo-test-topic";
     protected static final int MESSAGE_COUNT = 100;
 
+    /** 80亿/天 = 92,592 msg/s - our target throughput */
+    protected static final double TARGET_MSG_PER_SECOND = 93_000;
+
     @BeforeAll
     static void startKafka() {
         network = Network.newNetwork();
@@ -52,6 +55,9 @@ public abstract class BaseIntegrationTest {
         }
     }
 
+    /**
+     * Create test config with optimized settings for high throughput
+     */
     protected KafkaConnectConfig createTestConfig(boolean enableEos) {
         KafkaConnectConfig config = new KafkaConnectConfig();
         config.setBootstrapServers(bootstrapServers);
@@ -59,11 +65,16 @@ public abstract class BaseIntegrationTest {
         config.setGroupId("test-group-" + System.currentTimeMillis());
         config.setAcks(enableEos ? "all" : "1");
         config.setRetries(enableEos ? Integer.MAX_VALUE : 3);
-        config.setBatchSize(16384);
-        config.setLingerMs(1);
-        config.setBufferMemory(33554432);
+        // High throughput settings
+        config.setBatchSize(131072);           // 128KB
+        config.setLingerMs(20);                // 20ms
+        config.setBufferMemory(134217728);     // 128MB
         config.setCompressionType("snappy");
-        config.setMaxPollRecords(500);
+        config.setMaxPollRecords(10000);        // 10K records
+        config.setFetchMinBytes(1048576);      // 1MB
+        config.setFetchMaxWaitMs(500);
+        config.setMaxPartitionFetchBytes(52428800); // 50MB
+        config.setSessionTimeoutMs(45000);
         config.setEnableIdempotence(enableEos);
         config.setEnableManualCommit(false);
         return config;
@@ -115,5 +126,22 @@ public abstract class BaseIntegrationTest {
                 new org.apache.kafka.clients.consumer.KafkaConsumer<>(props);
         consumer.subscribe(java.util.Collections.singletonList(TOPIC));
         return consumer;
+    }
+
+    protected org.apache.kafka.clients.producer.KafkaProducer<String, byte[]> createRawKafkaProducer(
+            String bootstrapServers) {
+        Properties props = new Properties();
+        props.put(org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+                org.apache.kafka.common.serialization.StringSerializer.class);
+        props.put(org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+                org.apache.kafka.common.serialization.ByteArraySerializer.class);
+        props.put(org.apache.kafka.clients.producer.ProducerConfig.ACKS_CONFIG, "1");
+        props.put(org.apache.kafka.clients.producer.ProducerConfig.BATCH_SIZE_CONFIG, 131072);  // 128KB
+        props.put(org.apache.kafka.clients.producer.ProducerConfig.LINGER_MS_CONFIG, 20);
+        props.put(org.apache.kafka.clients.producer.ProducerConfig.BUFFER_MEMORY_CONFIG, 134217728);  // 128MB
+        props.put(org.apache.kafka.clients.producer.ProducerConfig.COMPRESSION_TYPE_CONFIG, "snappy");
+        props.put(org.apache.kafka.clients.producer.ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, 5);
+        return new org.apache.kafka.clients.producer.KafkaProducer<>(props);
     }
 }
