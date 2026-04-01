@@ -36,9 +36,9 @@ public class EventBusDemoApplication {
             Thread.sleep(5000);
 
             // Publish events (don't fail the app if Kafka is unreachable)
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 1000000; i++) {
                 try {
-                    producer.publishSync(DemoEvent.of(i, "Hello World from Kafka!"));
+                    producer.publishAsync(DemoEvent.of(i, "Hello World from Kafka!"));
                 } catch (EventBusException e) {
                     log.warn("Failed to publish event #{}: {}. "
                             + "Continuing... (Kafka may be unreachable).", i, e.getMessage());

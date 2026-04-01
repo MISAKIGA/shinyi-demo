@@ -67,9 +67,9 @@ public class SimpleEventProducer {
             totalPublished.incrementAndGet();
 
             // Log every 10000 events
-            if (totalPublished.get() % 10000 == 0) {
-                log.info("[PRODUCER] Throughput stats - Total published: {}", totalPublished.get());
-            }
+//            if (totalPublished.get() % 10000 == 0) {
+//                log.info("[PRODUCER] Throughput stats - Total published: {}", totalPublished.get());
+//            }
         }, executorService);
     }
 

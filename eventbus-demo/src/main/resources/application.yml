@@ -31,6 +31,7 @@ shinyi:
     monitoring:
       enabled: true
       interval-seconds: 10
+      reset-strategy: daily
       log:
         enabled: true
       http:

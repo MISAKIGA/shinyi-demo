@@ -35,10 +35,10 @@ public class SimpleEventConsumer {
         totalReceived.addAndGet(events.size());
 
         // Log every 1000 events instead of every event
-        if (totalReceived.get() % 1000 == 0) {
-            log.info("[CONSUMER] Throughput stats - Total received: {}, Queue size: {}",
-                    totalReceived.get(), receivedEvents.size());
-        }
+//        if (totalReceived.get() % 1000 == 0) {
+//            log.info("[CONSUMER] Throughput stats - Total received: {}, Queue size: {}",
+//                    totalReceived.get(), receivedEvents.size());
+//        }
     }
 
     public List<DemoEvent> getReceivedEvents() {
