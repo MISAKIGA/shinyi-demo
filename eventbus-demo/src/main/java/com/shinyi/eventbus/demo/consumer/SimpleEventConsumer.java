@@ -1,5 +1,6 @@
 package com.shinyi.eventbus.demo.consumer;
 
+import com.shinyi.eventbus.SerializeType;
 import com.shinyi.eventbus.anno.EventBusListener;
 import com.shinyi.eventbus.demo.model.DemoEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,7 @@ public class SimpleEventConsumer {
         this.topic = kafkaConfig.getTopic();
     }
 
-    @EventBusListener(topic = "${eventbus.kafka.topic}", deserializeType = com.shinyi.eventbus.SerializeType.EVENT)
+    @EventBusListener(topic = "${eventbus.kafka.topic}", deserializeType = SerializeType.EVENT, entityType = DemoEvent.class)
     public void onDemoEvent(List<DemoEvent> events) {
         // High-throughput processing: batch process without per-event logging
         for (DemoEvent event : events) {
