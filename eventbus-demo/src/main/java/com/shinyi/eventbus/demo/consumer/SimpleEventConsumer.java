@@ -25,7 +25,7 @@ public class SimpleEventConsumer {
         this.topic = kafkaConfig.getTopic();
     }
 
-    @EventBusListener(topic = "${eventbus.kafka.topic}", deserializeType = SerializeType.EVENT, entityType = DemoEvent.class)
+<    @EventBusListener(topic = "${eventbus.kafka.topic}", deserializeType = SerializeType.EVENT, entityType = DemoEvent.class)
     public void onDemoEvent(List<DemoEvent> events) {
         // High-throughput processing: batch process without per-event logging
         for (DemoEvent event : events) {

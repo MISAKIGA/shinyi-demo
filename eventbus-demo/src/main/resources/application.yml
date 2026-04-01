@@ -56,6 +56,15 @@ shinyi:
     thread-pool-max-size: 16
     max-queue-size: 50000
 
+    # Monitoring & Telemetry (for pressure testing)
+    monitoring:
+      enabled: true
+      interval-seconds: 10
+      http:
+        enabled: true
+        port: 18081
+        path: /metrics/eventbus
+
     kafka:
       connect-configs:
         myKafka:
