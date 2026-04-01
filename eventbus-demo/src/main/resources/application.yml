@@ -44,7 +44,7 @@ shinyi:
         myKafka:
           is-default: true
           bootstrap-servers: 10.10.10.30:9092
-          topic: demo-topic
+          topic: demo-topic-mt
           group-id: demo-group
 
           # Producer settings - optimized for 80亿/天
@@ -73,5 +73,11 @@ shinyi:
           enable-idempotence: false
           enable-manual-commit: false
           commit-batch-size: 500
+
+          # Consumer parallel processing (多线程消费)
+          # 0 = auto-detect based on partition count and CPU cores
+          # N = use N threads (capped at partition count)
+          consumer-threads: 0
+          auto-detect-consumer-threads: true
 server:
   port: 18081
