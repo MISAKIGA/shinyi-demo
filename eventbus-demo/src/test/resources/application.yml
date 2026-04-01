@@ -7,11 +7,16 @@ eventbus:
     bootstrap-servers: ${kafka.bootstrap-servers:localhost:9092}
     topic: demo-test-topic
     group-id: test-group
-    batch-size: 16384
-    linger-ms: 1
-    buffer-memory: 33554432
+    # Test-optimized settings (scaled down from production)
+    acks: 1
+    batch-size: 65536
+    linger-ms: 10
+    buffer-memory: 67108864
     compression-type: snappy
-    max-poll-records: 500
+    max-poll-records: 1000
+    fetch-min-bytes: 1024
+    fetch-max-wait-ms: 500
+    max-partition-fetch-bytes: 10485760
     enable-idempotence: false
     enable-manual-commit: false
     commit-batch-size: 100

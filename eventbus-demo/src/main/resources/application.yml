@@ -19,23 +19,43 @@ logging:
     root: INFO
 
 # Custom Kafka config (read by KafkaConfig.java)
+# Optimized for 80亿/天 (≈93,000 msg/s) production workload
 eventbus:
   kafka:
     bootstrap-servers: localhost:9092
     topic: demo-topic
     group-id: demo-group
-    batch-size: 16384
-    linger-ms: 1
-    buffer-memory: 33554432
-    compression-type: snappy
-    max-poll-records: 500
+
+    # Producer optimized settings
+    acks: 1                           # Throughput mode: only wait for leader ack
+    batch-size: 131072               # 128KB batch (4x default) for higher throughput
+    linger-ms: 20                    # 20ms linger to accumulate larger batches
+    buffer-memory: 134217728          # 128MB buffer (4x default)
+    compression-type: snappy         # Fast compression
+    max-in-flight-requests-per-connection: 5
+
+    # Consumer optimized settings for high throughput
+    max-poll-records: 10000          # 10x default: fetch 10K records per poll
+    fetch-min-bytes: 1048576         # 1MB min fetch to reduce network overhead
+    fetch-max-wait-ms: 500           # Max wait for fill
+    max-partition-fetch-bytes: 52428800  # 50MB per partition (5x default)
+    session-timeout-ms: 45000         # Longer session to avoid rebalances
+    max-poll-interval-ms: 600000     # 10min: allow long processing
+
+    # EOS settings (disable for max throughput, enable for exactly-once)
     enable-idempotence: false
     enable-manual-commit: false
-    commit-batch-size: 100
+    commit-batch-size: 500           # Batch commit for efficiency
 
 # Shinyi EventBus framework config (read by shinyi-eventbus framework)
+# High-throughput production configuration
 shinyi:
   eventbus:
+    # Thread pool for async consumer processing
+    thread-pool-core-size: 8
+    thread-pool-max-size: 16
+    max-queue-size: 50000
+
     kafka:
       connect-configs:
         myKafka:
@@ -43,13 +63,32 @@ shinyi:
           bootstrap-servers: 10.10.10.30:9092
           topic: demo-topic
           group-id: demo-group
-          batch-size: 16384
-          linger-ms: 1
-          buffer-memory: 33554432
+
+          # Producer settings - optimized for 80亿/天
+          acks: 1
+          retries: 3
+          batch-size: 131072          # 128KB
+          linger-ms: 20              # 20ms
+          buffer-memory: 134217728   # 128MB
           compression-type: snappy
-          max-poll-records: 500
+          max-in-flight-requests-per-connection: 5
+
+          # Consumer settings - optimized for 80亿/天
+          auto-offset-reset: earliest
+          enable-auto-commit: true
+          auto-commit-interval-ms: 5000
+          session-timeout-ms: 45000
+          max-poll-records: 10000    # 10K records per poll
+          max-poll-interval-ms: 600000
+          fetch-min-bytes: 1048576   # 1MB
+          fetch-max-wait-ms: 500
+          max-partition-fetch-bytes: 52428800  # 50MB
+          receive-buffer-bytes: 131072
+          send-buffer-bytes: 131072
+
+          # EOS
           enable-idempotence: false
           enable-manual-commit: false
-          commit-batch-size: 100
+          commit-batch-size: 500
 server:
   port: 18081

@@ -30,7 +30,7 @@ class ConsumerTest {
     void onDemoEvent_shouldAddEventToReceivedEvents() {
         DemoEvent event = DemoEvent.of(1L, "test message");
 
-        consumer.onDemoEvent(event);
+        consumer.onDemoEvent(List.of(event));
 
         List<DemoEvent> receivedEvents = consumer.getReceivedEvents();
         assertEquals(1, receivedEvents.size());
@@ -43,9 +43,7 @@ class ConsumerTest {
         DemoEvent event2 = DemoEvent.of(2L, "second message");
         DemoEvent event3 = DemoEvent.of(3L, "third message");
 
-        consumer.onDemoEvent(event1);
-        consumer.onDemoEvent(event2);
-        consumer.onDemoEvent(event3);
+        consumer.onDemoEvent(List.of(event1, event2, event3));
 
         assertEquals(3, consumer.getReceivedCount());
         assertEquals(3, consumer.getReceivedEvents().size());
@@ -59,8 +57,7 @@ class ConsumerTest {
         DemoEvent event1 = DemoEvent.of(1L, "first message");
         DemoEvent event2 = DemoEvent.of(1L, "duplicate sequence");
 
-        consumer.onDemoEvent(event1);
-        consumer.onDemoEvent(event2);
+        consumer.onDemoEvent(List.of(event1, event2));
 
         assertEquals(2, consumer.getReceivedCount());
     }
@@ -72,7 +69,7 @@ class ConsumerTest {
         event.setMessage("preserved message");
         event.setTimestamp(System.currentTimeMillis());
 
-        consumer.onDemoEvent(event);
+        consumer.onDemoEvent(List.of(event));
 
         DemoEvent received = consumer.getReceivedEvents().get(0);
         assertEquals(100L, received.getSequence());
@@ -82,9 +79,11 @@ class ConsumerTest {
 
     @Test
     void clear_shouldRemoveAllReceivedEvents() {
-        consumer.onDemoEvent(DemoEvent.of(1L, "first"));
-        consumer.onDemoEvent(DemoEvent.of(2L, "second"));
-        consumer.onDemoEvent(DemoEvent.of(3L, "third"));
+        consumer.onDemoEvent(List.of(
+                DemoEvent.of(1L, "first"),
+                DemoEvent.of(2L, "second"),
+                DemoEvent.of(3L, "third")
+        ));
 
         assertEquals(3, consumer.getReceivedCount());
 
@@ -119,7 +118,7 @@ class ConsumerTest {
             final int threadNum = i;
             threads[i] = new Thread(() -> {
                 for (int j = 0; j < 10; j++) {
-                    consumer.onDemoEvent(DemoEvent.of((long) (threadNum * 10 + j), "thread-" + threadNum + "-msg-" + j));
+                    consumer.onDemoEvent(List.of(DemoEvent.of((long) (threadNum * 10 + j), "thread-" + threadNum + "-msg-" + j)));
                 }
             });
             threads[i].start();
@@ -136,7 +135,7 @@ class ConsumerTest {
     void onDemoEvent_shouldHandleEmptyMessage() {
         DemoEvent event = DemoEvent.of(1L, "");
 
-        consumer.onDemoEvent(event);
+        consumer.onDemoEvent(List.of(event));
 
         assertEquals(1, consumer.getReceivedCount());
         assertEquals("", consumer.getReceivedEvents().get(0).getMessage());
@@ -148,7 +147,7 @@ class ConsumerTest {
         event.setSequence(1L);
         event.setMessage(null);
 
-        consumer.onDemoEvent(event);
+        consumer.onDemoEvent(List.of(event));
 
         assertEquals(1, consumer.getReceivedCount());
         assertNull(consumer.getReceivedEvents().get(0).getMessage());
@@ -158,7 +157,7 @@ class ConsumerTest {
     void onDemoEvent_shouldHandleMaxLongSequence() {
         DemoEvent event = DemoEvent.of(Long.MAX_VALUE, "max sequence");
 
-        consumer.onDemoEvent(event);
+        consumer.onDemoEvent(List.of(event));
 
         assertEquals(1, consumer.getReceivedCount());
         assertEquals(Long.MAX_VALUE, consumer.getReceivedEvents().get(0).getSequence());
@@ -168,7 +167,7 @@ class ConsumerTest {
     void onDemoEvent_shouldHandleNegativeSequence() {
         DemoEvent event = DemoEvent.of(-100L, "negative sequence");
 
-        consumer.onDemoEvent(event);
+        consumer.onDemoEvent(List.of(event));
 
         assertEquals(1, consumer.getReceivedCount());
         assertEquals(-100L, consumer.getReceivedEvents().get(0).getSequence());
@@ -177,10 +176,10 @@ class ConsumerTest {
     @Test
     void onDemoEvent_shouldUseBoundedQueue() {
         // Fill the queue beyond its capacity and verify it doesn't block
-        // ArrayBlockingQueue with capacity 10000 should handle most scenarios
+        // ArrayBlockingQueue with capacity 100000 should handle most scenarios
         for (long i = 0; i < 100; i++) {
             DemoEvent event = DemoEvent.of(i, "message " + i);
-            consumer.onDemoEvent(event);
+            consumer.onDemoEvent(List.of(event));
         }
 
         assertEquals(100, consumer.getReceivedCount());

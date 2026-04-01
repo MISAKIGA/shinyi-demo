@@ -8,13 +8,16 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Component
 public class SimpleEventConsumer {
 
-    private static final int QUEUE_CAPACITY = 10000;
+    // High-capacity queue for 80亿/天 throughput
+    private static final int QUEUE_CAPACITY = 100000;
     private final BlockingQueue<DemoEvent> receivedEvents = new ArrayBlockingQueue<>(QUEUE_CAPACITY);
+    private final AtomicLong totalReceived = new AtomicLong(0);
     private final String topic;
 
     public SimpleEventConsumer(com.shinyi.eventbus.demo.config.KafkaConfig kafkaConfig) {
@@ -23,9 +26,16 @@ public class SimpleEventConsumer {
 
     @EventBusListener(topic = "${eventbus.kafka.topic}", deserializeType = com.shinyi.eventbus.SerializeType.EVENT)
     public void onDemoEvent(List<DemoEvent> events) {
+        // High-throughput processing: batch process without per-event logging
         for (DemoEvent event : events) {
-            log.info("[CONSUMER] Received event #{}: {}", event.getSequence(), event.getMessage());
             receivedEvents.offer(event);
+        }
+        totalReceived.addAndGet(events.size());
+
+        // Log every 1000 events instead of every event
+        if (totalReceived.get() % 1000 == 0) {
+            log.info("[CONSUMER] Throughput stats - Total received: {}, Queue size: {}",
+                    totalReceived.get(), receivedEvents.size());
         }
     }
 
@@ -35,9 +45,14 @@ public class SimpleEventConsumer {
 
     public void clear() {
         receivedEvents.clear();
+        totalReceived.set(0);
     }
 
     public int getReceivedCount() {
         return receivedEvents.size();
+    }
+
+    public long getTotalReceived() {
+        return totalReceived.get();
     }
 }

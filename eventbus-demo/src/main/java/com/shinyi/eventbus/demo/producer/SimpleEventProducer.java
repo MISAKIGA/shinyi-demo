@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Component
@@ -19,13 +20,16 @@ public class SimpleEventProducer {
 
     private final EventListenerRegistryManager registryManager;
     private final String topic;
+    // High-throughput thread pool for 80亿/天
     private final ExecutorService executorService;
+    private final AtomicLong totalPublished = new AtomicLong(0);
 
     public SimpleEventProducer(EventListenerRegistryManager registryManager,
                                com.shinyi.eventbus.demo.config.KafkaConfig kafkaConfig) {
         this.registryManager = registryManager;
         this.topic = kafkaConfig.getTopic();
-        this.executorService = Executors.newFixedThreadPool(10);
+        // Larger thread pool for higher throughput
+        this.executorService = Executors.newFixedThreadPool(20);
     }
 
     /**
@@ -41,11 +45,11 @@ public class SimpleEventProducer {
                 null
         );
         registryManager.publish(EventBusType.KAFKA, eventModel);
-        log.info("[SYNC] Published event #{}", event.getSequence());
+        totalPublished.incrementAndGet();
     }
 
     /**
-     * Async publish - returns immediately
+     * Async publish - returns immediately (recommended for high throughput)
      */
     public CompletableFuture<Void> publishAsync(DemoEvent event) {
         return CompletableFuture.runAsync(() -> {
@@ -58,7 +62,12 @@ public class SimpleEventProducer {
                     null
             );
             registryManager.publish(EventBusType.KAFKA, eventModel);
-            log.info("[ASYNC] Published event #{}", event.getSequence());
+            totalPublished.incrementAndGet();
+
+            // Log every 10000 events
+            if (totalPublished.get() % 10000 == 0) {
+                log.info("[PRODUCER] Throughput stats - Total published: {}", totalPublished.get());
+            }
         }, executorService);
     }
 
@@ -75,5 +84,10 @@ public class SimpleEventProducer {
                 null
         );
         registryManager.publish(EventBusType.KAFKA, eventModel);
+        totalPublished.incrementAndGet();
+    }
+
+    public long getTotalPublished() {
+        return totalPublished.get();
     }
 }

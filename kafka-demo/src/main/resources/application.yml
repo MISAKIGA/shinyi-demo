@@ -16,27 +16,27 @@ kafka:
     topic: ${KAFKA_TOPIC:test-topic}
     group-id: ${KAFKA_GROUP_ID:test-group}
 
-    # Producer settings (Optimized defaults)
+    # Producer settings (Optimized for 80亿/天 high throughput)
     producer-message-count: ${KAFKA_PRODUCER_MESSAGE_COUNT:10000}
     producer-message-size: ${KAFKA_PRODUCER_MESSAGE_SIZE:1024}
-    producer-acks: ${KAFKA_PRODUCER_ACKS:1}
+    producer-acks: ${KAFKA_PRODUCER_ACKS:1}                               # Throughput mode
     producer-retries: ${KAFKA_PRODUCER_RETRIES:3}
-    producer-batch-size: ${KAFKA_PRODUCER_BATCH_SIZE:65536}      # Optimized: 64KB
-    producer-linger-ms: ${KAFKA_PRODUCER_LINGER_MS:10}            # Optimized: 10ms
-    producer-buffer-memory: ${KAFKA_PRODUCER_BUFFER_MEMORY:67108864}  # Optimized: 64MB
-    producer-compression-type: ${KAFKA_PRODUCER_COMPRESSION_TYPE:snappy}  # Optimized: snappy
+    producer-batch-size: ${KAFKA_PRODUCER_BATCH_SIZE:131072}             # 128KB batch
+    producer-linger-ms: ${KAFKA_PRODUCER_LINGER_MS:20}                   # 20ms linger
+    producer-buffer-memory: ${KAFKA_PRODUCER_BUFFER_MEMORY:134217728}    # 128MB buffer
+    producer-compression-type: ${KAFKA_PRODUCER_COMPRESSION_TYPE:snappy}  # Snappy compression
 
-    # Consumer settings (Optimized defaults)
-    consumer-max-poll-records: ${KAFKA_CONSUMER_MAX_POLL_RECORDS:5000}    # Optimized: 5000
+    # Consumer settings (Optimized for 80亿/天 high throughput)
+    consumer-max-poll-records: ${KAFKA_CONSUMER_MAX_POLL_RECORDS:10000}   # 10K records
     consumer-auto-offset-reset: ${KAFKA_CONSUMER_AUTO_OFFSET_RESET:earliest}
     consumer-enable-auto-commit: ${KAFKA_CONSUMER_ENABLE_AUTO_COMMIT:true}
-    consumer-fetch-min-bytes: ${KAFKA_CONSUMER_FETCH_MIN_BYTES:1024}       # Optimized: 1KB
-    consumer-fetch-max-wait-ms: ${KAFKA_CONSUMER_FETCH_MAX_WAIT_MS:1000}      # Optimized: 1s
-    consumer-max-partition-fetch-bytes: ${KAFKA_CONSUMER_MAX_PARTITION_FETCH_BYTES:10485760}  # Optimized: 10MB
+    consumer-fetch-min-bytes: ${KAFKA_CONSUMER_FETCH_MIN_BYTES:1048576}   # 1MB min fetch
+    consumer-fetch-max-wait-ms: ${KAFKA_CONSUMER_FETCH_MAX_WAIT_MS:500}   # 500ms max wait
+    consumer-max-partition-fetch-bytes: ${KAFKA_CONSUMER_MAX_PARTITION_FETCH_BYTES:52428800}  # 50MB
 
     # Pool settings (for multi-threaded production/consumption)
-    producer-pool-size: ${KAFKA_PRODUCER_POOL_SIZE:4}      # Multi-threaded producer pool size
-    consumer-pool-size: ${KAFKA_CONSUMER_POOL_SIZE:2}      # Multi-threaded consumer pool size
+    producer-pool-size: ${KAFKA_PRODUCER_POOL_SIZE:8}      # Larger pool for high throughput
+    consumer-pool-size: ${KAFKA_CONSUMER_POOL_SIZE:4}      # Larger pool for high throughput
 
     # Idempotence settings (for exactly-once semantics)
     enable-idempotence: ${KAFKA_ENABLE_IDEMPOTENCE:false}  # Enable exactly-once producer
@@ -56,20 +56,30 @@ kafka:
     kerberos-keytab: ${KAFKA_KERBEROS_KEYTAB:}
     kerberos-krb5-location: ${KAFKA_KERBEROS_KRB5_LOCATION:}
 
-# Shinyi EventBus Kafka Configuration
+# Shinyi EventBus Kafka Configuration - Optimized for 80亿/天
 shinyi:
   eventbus:
+    thread-pool-core-size: 8
+    thread-pool-max-size: 16
+    max-queue-size: 50000
     kafka:
       default:
         is-default: true
         bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:10.10.10.30:9092}
         topic: ${KAFKA_TOPIC:test-topic}
         group-id: ${KAFKA_GROUP_ID:test-group}
-        acks: ${KAFKA_PRODUCER_ACKS:1}
+        acks: 1
         retries: 3
-        batch-size: 65536
-        linger-ms: 10
-        buffer-memory: 67108864
+        batch-size: 131072
+        linger-ms: 20
+        buffer-memory: 134217728
+        compression-type: snappy
+        max-poll-records: 10000
+        fetch-min-bytes: 1048576
+        fetch-max-wait-ms: 500
+        max-partition-fetch-bytes: 52428800
+        session-timeout-ms: 45000
+        max-poll-interval-ms: 600000
 
 # Logging
 logging:
