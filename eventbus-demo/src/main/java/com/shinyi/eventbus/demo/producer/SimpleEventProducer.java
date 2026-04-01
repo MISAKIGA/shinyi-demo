@@ -9,6 +9,8 @@ import com.shinyi.eventbus.support.EventListenerRegistryManager;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,9 +27,9 @@ public class SimpleEventProducer {
     private final AtomicLong totalPublished = new AtomicLong(0);
 
     public SimpleEventProducer(EventListenerRegistryManager registryManager,
-                               com.shinyi.eventbus.demo.config.KafkaConfig kafkaConfig) {
+                               @Value("${shinyi.eventbus.kafka.connect-configs.myKafka.topic}") String topic) {
         this.registryManager = registryManager;
-        this.topic = kafkaConfig.getTopic();
+        this.topic = topic;
         // Larger thread pool for higher throughput
         this.executorService = Executors.newFixedThreadPool(20);
     }

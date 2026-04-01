@@ -4,6 +4,7 @@ import com.shinyi.eventbus.SerializeType;
 import com.shinyi.eventbus.anno.EventBusListener;
 import com.shinyi.eventbus.demo.model.DemoEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -21,11 +22,11 @@ public class SimpleEventConsumer {
     private final AtomicLong totalReceived = new AtomicLong(0);
     private final String topic;
 
-    public SimpleEventConsumer(com.shinyi.eventbus.demo.config.KafkaConfig kafkaConfig) {
-        this.topic = kafkaConfig.getTopic();
+    public SimpleEventConsumer(@Value("${shinyi.eventbus.kafka.connect-configs.myKafka.topic}") String topic) {
+        this.topic = topic;
     }
 
-    @EventBusListener(topic = "${eventbus.kafka.topic}", deserializeType = SerializeType.EVENT, entityType = DemoEvent.class)
+    @EventBusListener(topic = "${shinyi.eventbus.kafka.connect-configs.myKafka.topic}", deserializeType = SerializeType.EVENT, entityType = DemoEvent.class)
     public void onDemoEvent(List<DemoEvent> events) {
         // High-throughput processing: batch process without per-event logging
         for (DemoEvent event : events) {

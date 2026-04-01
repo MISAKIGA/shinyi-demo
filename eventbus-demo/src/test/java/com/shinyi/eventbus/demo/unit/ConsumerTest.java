@@ -1,12 +1,10 @@
 package com.shinyi.eventbus.demo.unit;
 
-import com.shinyi.eventbus.demo.config.KafkaConfig;
 import com.shinyi.eventbus.demo.consumer.SimpleEventConsumer;
 import com.shinyi.eventbus.demo.model.DemoEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
@@ -16,14 +14,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @ExtendWith(MockitoExtension.class)
 class ConsumerTest {
 
-    @Mock
-    private KafkaConfig kafkaConfig;
-
     private SimpleEventConsumer consumer;
 
     @BeforeEach
     void setUp() {
-        consumer = new SimpleEventConsumer(kafkaConfig);
+        consumer = new SimpleEventConsumer("test-topic");
     }
 
     @Test

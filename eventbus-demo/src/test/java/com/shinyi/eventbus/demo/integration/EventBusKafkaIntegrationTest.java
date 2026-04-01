@@ -58,7 +58,7 @@ public class EventBusKafkaIntegrationTest {
         registryManager.start();
 
         // Create producer using EventBus framework
-        producer = new SimpleEventProducer(registryManager, createKafkaConfigForBeans());
+        producer = new SimpleEventProducer(registryManager, TEST_TOPIC);
     }
 
     @AfterEach
@@ -88,14 +88,6 @@ public class EventBusKafkaIntegrationTest {
         config.setEnableIdempotence(false);
         config.setEnableManualCommit(false);
         return config;
-    }
-
-    private com.shinyi.eventbus.demo.config.KafkaConfig createKafkaConfigForBeans() {
-        var kafkaConfig = new com.shinyi.eventbus.demo.config.KafkaConfig();
-        kafkaConfig.setBootstrapServers(BOOTSTRAP_SERVERS);
-        kafkaConfig.setTopic(TEST_TOPIC);
-        kafkaConfig.setGroupId(uniqueGroupId);
-        return kafkaConfig;
     }
 
     private RegistryManagerHolder createRegistryManager(KafkaConnectConfig config) {

@@ -2,7 +2,6 @@ package com.shinyi.eventbus.demo.unit;
 
 import com.shinyi.eventbus.EventBusType;
 import com.shinyi.eventbus.EventModel;
-import com.shinyi.eventbus.demo.config.KafkaConfig;
 import com.shinyi.eventbus.demo.model.DemoEvent;
 import com.shinyi.eventbus.demo.producer.SimpleEventProducer;
 import com.shinyi.eventbus.support.EventListenerRegistryManager;
@@ -25,17 +24,13 @@ class ProducerTest {
     @Mock
     private EventListenerRegistryManager registryManager;
 
-    @Mock
-    private KafkaConfig kafkaConfig;
-
     private SimpleEventProducer producer;
 
     private static final String TEST_TOPIC = "test-topic";
 
     @BeforeEach
     void setUp() {
-        when(kafkaConfig.getTopic()).thenReturn(TEST_TOPIC);
-        producer = new SimpleEventProducer(registryManager, kafkaConfig);
+        producer = new SimpleEventProducer(registryManager, TEST_TOPIC);
     }
 
     @Test
@@ -86,16 +81,6 @@ class ProducerTest {
     }
 
     @Test
-    void publish_shouldUseKafkaConfigTopic() {
-        lenient().when(kafkaConfig.getTopic()).thenReturn("custom-topic");
-        DemoEvent event = DemoEvent.of(4L, "custom topic test");
-
-        producer.publish(event);
-
-        verify(registryManager).publish(eq(EventBusType.KAFKA), any(EventModel.class));
-    }
-
-    @Test
     void publish_shouldThrowOnRegistryManagerException() {
         doThrow(new RuntimeException("Registry error")).when(registryManager)
                 .publish(any(EventBusType.class), any(EventModel.class));
@@ -127,11 +112,6 @@ class ProducerTest {
         ExecutionException exception = assertThrows(ExecutionException.class,
                 () -> future.get(5, TimeUnit.SECONDS));
         assertTrue(exception.getCause() instanceof RuntimeException);
-    }
-
-    @Test
-    void constructor_shouldInitializeWithKafkaConfigTopic() {
-        verify(kafkaConfig, times(1)).getTopic();
     }
 
     @Test
