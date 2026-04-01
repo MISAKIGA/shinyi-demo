@@ -26,7 +26,10 @@ public class SimpleEventConsumer {
         this.topic = topic;
     }
 
-    @EventBusListener(topic = "${shinyi.eventbus.kafka.connect-configs.myKafka.topic}", deserializeType = SerializeType.EVENT, entityType = DemoEvent.class)
+    @EventBusListener(topic = "${shinyi.eventbus.kafka.connect-configs.myKafka.topic}",
+            group = "${shinyi.eventbus.kafka.connect-configs.myKafka.group-id}",
+            deserializeType = SerializeType.EVENT,
+            entityType = DemoEvent.class)
     public void onDemoEvent(List<DemoEvent> events) {
         // High-throughput processing: batch process without per-event logging
         for (DemoEvent event : events) {
