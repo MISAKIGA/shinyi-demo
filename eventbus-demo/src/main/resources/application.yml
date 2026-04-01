@@ -15,7 +15,7 @@ management:
 
 logging:
   level:
-    com.shinyi.eventbus: DEBUG
+    com.shinyi.eventbus: INFO
     root: INFO
 
 # Custom Kafka config (read by KafkaConfig.java)
@@ -60,6 +60,8 @@ shinyi:
     monitoring:
       enabled: true
       interval-seconds: 10
+      log:
+        enabled: true
       http:
         enabled: true
         port: 18081
