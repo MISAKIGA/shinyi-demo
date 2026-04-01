@@ -1,0 +1,64 @@
+spring:
+  application:
+    name: eventbus-demo-raw
+  jmx:
+    enabled: false
+
+logging:
+  level:
+    com.shinyi.eventbus: INFO
+    root: WARN
+
+shinyi:
+  eventbus:
+    thread-pool-core-size: 16
+    thread-pool-max-size: 32
+    max-queue-size: 100000
+
+    monitoring:
+      enabled: false
+      log:
+        enabled: false
+      http:
+        enabled: false
+
+    kafka:
+      connect-configs:
+        myKafka:
+          is-default: true
+          bootstrap-servers: 10.10.10.30:9092
+          topic: final-test-1775062236301
+          group-id: raw-perf-group
+
+          # Ultra-high throughput producer settings
+          acks: 1
+          retries: 3
+          batch-size: 131072
+          linger-ms: 10
+          buffer-memory: 268435456
+          compression-type: snappy
+          max-in-flight-requests-per-connection: 10
+
+          # Consumer settings - high throughput
+          auto-offset-reset: earliest
+          enable-auto-commit: true
+          auto-commit-interval-ms: 5000
+          session-timeout-ms: 30000
+          max-poll-records: 5000
+          max-poll-interval-ms: 300000
+          fetch-min-bytes: 524288
+          fetch-max-wait-ms: 500
+          max-partition-fetch-bytes: 10485760
+          receive-buffer-bytes: 262144
+          send-buffer-bytes: 262144
+
+          # EOS - DISABLED for max speed
+          enable-idempotence: false
+          enable-manual-commit: false
+          commit-batch-size: 1000
+
+          # Multi-threaded consumer (16 threads for 10 partitions)
+          consumer-threads: 16
+          auto-detect-consumer-threads: false
+server:
+  port: 18081
